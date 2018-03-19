@@ -1,0 +1,20 @@
+Files are organized are as follows:
+
+---Processed[i].txt---
+(the following are given for each hashtag in name[i].txt)
+k_array [popularity count]
+training timestamp (relative to the first occurrence)
+omega
+omega_0
+alpha
+initial_value(beta, lambda_0)
+testtimestamp
+
+---rank[i].txt---
+
+ranked_list of hashtags in different time windows
+(you can split as many as you can)
+
+---name[i].txt---
+
+list of competing hashtags
