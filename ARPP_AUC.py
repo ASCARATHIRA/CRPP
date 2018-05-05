@@ -243,12 +243,11 @@ predmatrix = [[0 for x in range(p)] for x in range(p)]
 for i in range(p-1):
 	for j in range(i+1, p):
 		for n in range(last_training_interval+1):
+			D_loss.append(l[i][j]*(w[i][j]*predplaceholders[i][j]+xi[i][j]))
 			if intervalcounts[i][n] > intervalcounts[j][n]:
-				D_loss.append(l[i][j]*(w[i][j]*predplaceholders[i][j]+xi[i][j]))
-				predmatrix[i][j] = (intervalcounts[i][n]-intervalcounts[j][n])(pred_intervalcounts[i][n]-pred_intervalcounts[j][n]-1)
+				predmatrix[i][j] = (pred_intervalcounts[i][n]-pred_intervalcounts[j][n]-1)
 			elif intervalcounts[j][n] > intervalcounts[i][n]:
-				D_loss.append(l[i][j]*(w[i][j]*predplaceholders[i][j]+xi[i][j]))
-				predmatrix[i][j] = (intervalcounts[i][n]-intervalcounts[j][n])(pred_intervalcounts[j][n]-pred_intervalcounts[i][n]-1)
+				predmatrix[i][j] = (pred_intervalcounts[j][n]-pred_intervalcounts[i][n]-1)
 				
 total_D_loss = tf.reduce_sum(D_loss)
 D_train_step = tf.train.AdagradOptimizer(0.3).minimize(total_D_loss)
@@ -516,7 +515,7 @@ for x in range(rankintervals):
 	#print "Dataset:", dataset, "Interval:", intervals[x*(no_intervals-1)/rankintervals][1], intervals[(x+1)*(no_intervals-1)/rankintervals][1], "SRCC:", val
 	
 r2 = []
-for x in range(last_training_interval+1:no_intervals+1):
+for x in range(last_training_interval+1,no_intervals+1):
 	r2.append(SRCC([intervalcounts[n][x] for n in range(p)], [pred_intervalcounts[n][x] for n in range(p)]))
 
 print r
