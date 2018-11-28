@@ -76,6 +76,16 @@ G_loss = [[] for x in range(p)]
 a = [[] for x in range(p)]
 b = [[] for x in range(p)]
 c = [[] for x in range(p)]
+a1 = []
+b1 = []
+c1 = []
+d1 = []
+
+def greater(x, c):
+	return tf.nn.relu(tf.sign(x-c))
+	
+def lesser(x, c):
+	return tf.nn.relu(tf.sign(c-x))
 
 l=0
 for n in range(p):
@@ -232,9 +242,11 @@ for n in range(p):
 			t1, t2 = intervals[i]
 			pred_intervalcounts[n][i] = math.exp(sum(saved_a*last_h + saved_b*t2 + saved_c))/sum(saved_b) - math.exp(sum(saved_a*last_h + saved_b*t1 + saved_c))/sum(saved_b)
 		
-#Convex optimization based competition model
+#Unbiased competition model
 
 l = tf.Variable([[0.001 for x in range(p)] for y in range(p)])
+w = tf.Variable([[0.001 for x in range(p)] for y in range(p)])
+xi = tf.Variable([[0.001 for x in range(p)] for y in range(p)])
 D_loss = []
 predplaceholders = tf.placeholder(tf.float32, [p,p])
 

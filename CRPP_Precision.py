@@ -244,51 +244,10 @@ for n in range(p):
 			t1, t2 = intervals[i]
 			pred_intervalcounts[n][i] = math.exp(sum(saved_a*last_h + saved_b*t2 + saved_c))/sum(saved_b) - math.exp(sum(saved_a*last_h + saved_b*t1 + saved_c))/sum(saved_b)
 		
-#Convex optimization based competition model
 
-l = tf.Variable([[0.001 for x in range(p)] for y in range(p)])
-w = tf.Variable([[0.001 for x in range(p)] for y in range(p)])
-xi = tf.Variable([[0.001 for x in range(p)] for y in range(p)])
-D_loss = []
-predplaceholders = tf.placeholder(tf.float32, [p,p])
-
-predmatrix = [[0 for x in range(p)] for x in range(p)]
-for i in range(p-1):
-	for j in range(i+1, p):
-		for n in range(last_training_interval+1):
-			D_loss.append(l[i][j]*(w[i][j]*predplaceholders[i][j]+xi[i][j]))
-			if intervalcounts[i][n] > intervalcounts[j][n]:
-				predmatrix[i][j] = (pred_intervalcounts[i][n]-pred_intervalcounts[j][n]-1)
-			elif intervalcounts[j][n] > intervalcounts[i][n]:
-				predmatrix[i][j] = (pred_intervalcounts[j][n]-pred_intervalcounts[i][n]-1)
-						
-total_D_loss = tf.reduce_sum(D_loss)
-D_train_step = tf.train.AdagradOptimizer(0.3).minimize(total_D_loss)
 	
 ADV_EPOCHS = 100
 for counter in range(ADV_EPOCHS):
-	_l = []
-	for epoch in range(1000):
-		with tf.Session() as sess:
-			sess.run(tf.global_variables_initializer())
-			_l, _w, _xi, _D_train_step = sess.run([l, w, xi, D_train_step], feed_dict={
-                    	predplaceholders:predmatrix
-                    	                 	
-                })
-    
-	D_loss = []
-	for i in range(p-1):
-		for j in range(i+1, p):
-			for n in range(last_training_interval+1):
-				if intervalcounts[i][n] > intervalcounts[j][n]:
-					D_loss.append(_l[i][j]*(_w[i][j]*
-						(tf.reduce_sum(tf.exp(a[i]*h_series[i][-1]+b[i]*(intervals[n][1]-intervals[n][0])+c[i])) - 
-							tf.exp(a[j]*h_series[j][-1]+b[j]*(intervals[n][1]-intervals[n][0])+c[j]))+_xi[i][j]))
-					
-				elif intervalcounts[j][n] > intervalcounts[i][n]:
-					D_loss.append(_l[i][j]*(_w[i][j]*
-						(tf.reduce_sum(tf.exp(a[j]*h_series[j][-1]+b[j]*(intervals[n][1]-intervals[n][0])+c[j])) - 
-							tf.exp(a[i]*h_series[i][-1]+b[i]*(intervals[n][1]-intervals[n][0])+c[i]))+_xi[i][j]))
 	
 	
 	a1=[]
@@ -319,7 +278,7 @@ for counter in range(ADV_EPOCHS):
 	d1 = tf.reduce_sum(d1)
 	
 	Precision = a1/(a1+b1)
-	Recall = a1/(b1+d1)
+	#Recall = a1/(b1+d1)
 	
 	l = 0
 	for n in range(p):
@@ -380,15 +339,12 @@ for counter in range(ADV_EPOCHS):
 		
 		regularizer = tf.add_n([tf.nn.l2_loss(a[n]),tf.nn.l2_loss(b[n]),tf.nn.l2_loss(c[n]),tf.nn.l2_loss(alpha),tf.nn.l2_loss(beta),tf.nn.l2_loss(gamma)])
 	
-		G_loss[n] = Precision
+		D_loss = Precision
+		G_loss[n] = tf.reduce_sum(tf.exp(a[n]*h_series[n][-1]+b[n]*t_series[n][-1]+c[n])/b[n] - tf.exp(a[n]*h_series[n][-1]+b[n]*t_series[n][0]+c[n])/b[n]) - sum([tf.reduce_sum(a[n]*h_series[n][-1]+b[n]*(t_series[n][k1+1]-t_series[n][k1])+c[n]) for k1 in range(len(t_series)-1)])
+	
+				
 		
-		C = 1
-		primal_obj_loss = []
-		for i in range(p-1):
-			for j in range(i+1, p):
-				primal_obj_loss.append(0.5*w[i][j]*w[i][j]+C*xi[i][j])
-		
-		adv_loss = tf.reduce_sum(primal_obj_loss) + tf.reduce_sum(D_loss) + tf.reduce_sum(G_loss[n])
+		adv_loss = tf.reduce_sum(D_loss) + tf.reduce_sum(G_loss[n])
 		
 		total_loss = adv_loss+regularizer
 	
